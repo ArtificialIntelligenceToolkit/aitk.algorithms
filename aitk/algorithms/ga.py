@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+# ****************************************************************
+# aitk.algorithms: Algorithms for AI
+#
+# Copyright (c) 2021 AITK Developers
+#
+# https://github.com/ArtificialIntelligenceToolkit/aitk.algorithms
+#
+# ****************************************************************
+
 import random
 from matplotlib import pyplot as plt
 
@@ -5,7 +15,7 @@ class GeneticAlgorithm(object):
     """
     A genetic algorithm is a model of biological evolution.  It
     maintains a population of chromosomes.  Each chromosome is
-    represented as a list of 0's and 1's.  A fitness function must be
+    represented as a list.  A fitness function must be
     defined to score each chromosome.  Initially, a random population
     is created. Then a series of generations are executed.  Each
     generation, parents are selected from the population based on
@@ -22,36 +32,36 @@ class GeneticAlgorithm(object):
         self.verbose = verbose      # Set to True to see more info displayed
         self.length = length        # Length of the chromosome
         self.popSize = popSize      # Size of the population
+        self.maxGen = None          # Maximum generation
+        self.pCrossover = None      # Probability of crossover
+        self.pMutation = None       # Probability of mutation (per bit)
+        print("Genetic algorithm")
+        print("  Chromosome length:", self.length)
+        print("  Population size:", self.popSize)
+
+    def initializePopulation(self):
+        """
+        Initialize each chromosome in the population with a random
+        chromosome.
+
+        Returns: None
+        Result: Initializes self.population
+        """
         self.bestEver = None        # Best member ever in this evolution
         self.bestEverScore = 0      # Fitness of best member ever
         self.population = None      # Population is a list of chromosomes
         self.scores = None          # Fitnesses of all members of population
         self.totalFitness = None    # Total fitness in entire population
         self.generation = 0         # Current generation of evolution
-        self.maxGen = 100           # Maximum generation
-        self.pCrossover = None      # Probability of crossover
-        self.pMutation = None       # Probability of mutation (per bit)
         self.bestList = []          # Best fitness per generation
         self.avgList = []           # Avg fitness per generation
-        print("Executing genetic algorithm")
-        print("Chromosome length:", self.length)
-        print("Population size:", self.popSize)
-
-    def initializePopulation(self):
-        """
-        Initialize each chromosome in the population with a random
-        series of 1's and 0's. 
-
-        Returns: None
-        Result: Initializes self.population
-        """
         self.population = []
         for i in range(self.popSize):
             chromosome = []
             for i in range(self.length):
-                chromosome.append(random.randrange(2))
+                chromosome.append(self.make_random_chromosome())
             self.population.append(chromosome)
-    
+
     def evaluatePopulation(self):
         """
         Computes the fitness of every chromosome in population.  Saves the
@@ -60,24 +70,26 @@ class GeneticAlgorithm(object):
         self.bestEverScore. If so, updates this variable and saves the
         chromosome to self.bestEver.  Computes the total fitness of
         the population and saves it in self.totalFitness. Saves the
-        current bestEverScore and the current average score to the 
-        lists self.bestList and self.avgList. 
+        current bestEverScore and the current average score to the
+        lists self.bestList and self.avgList.
 
         Returns: None
         """
-        scores = []
+        self.scores = []
         for chromosome in self.population:
-            scores.append(self.fitness(chromosome))
-        bestScore = max(scores)
-        best = self.population[scores.index(bestScore)]
+            self.scores.append(self.fitness(chromosome))
+        bestScore = max(self.scores)
+        best = self.population[self.scores.index(bestScore)]
         if bestScore > self.bestEverScore:
             self.bestEver = best[:]
             self.bestEverScore = bestScore
-            print("[Best %d] " % (bestScore), end= "")
-        self.scores = scores
+            self.report(best, bestScore)
         self.totalFitness = sum(self.scores)
         self.bestList.append(self.bestEverScore)
         self.avgList.append(sum(self.scores)/float(self.popSize))
+
+    def report(self, best, score):
+        print("[Best %d] " % (score), end= "")
 
     def selection(self):
         """
@@ -101,7 +113,7 @@ class GeneticAlgorithm(object):
         With probability self.pCrossover, recombine the genetic
         material of the given parents at a random location between
         1 and the length-1 of the chromosomes. If no crossover is
-        performed, then return the original parents. 
+        performed, then return the original parents.
 
         Returns: Two children
         """
@@ -129,11 +141,11 @@ class GeneticAlgorithm(object):
             if random.random() < self.pMutation:
                 if self.verbose:
                     print("Mutating at position", i)
-                if chromosome[i] == 0:
-                    chromosome[i] = 1
-                else:
-                    chromosome[i] = 0
-    
+                c = self.make_random_chromosome()
+                while chromosome[i] == c:
+                    c = self.make_random_chromosome()
+                chromosome[i] = c
+
     def oneGeneration(self):
         """
         Execute one generation of the evolution. Each generation,
@@ -161,12 +173,12 @@ class GeneticAlgorithm(object):
                 print(child1)
                 print(child2)
             newPop.append(child1)
-            newPop.append(child2)                
+            newPop.append(child2)
         if len(newPop) > self.popSize:
             newPop.pop(random.randrange(len(newPop)))
         self.population = newPop
         self.generation += 1
-        
+
     def evolve(self, maxGen, pCrossover=0.7, pMutation=0.001):
         """
         Run a series of generations until a maximum generation is
@@ -175,20 +187,21 @@ class GeneticAlgorithm(object):
         Returns the best chromosome ever found over the course of
         the evolution, which is stored in self.bestEver.
         """
+        if self.maxGen is None:
+            self.initializePopulation()
+            self.evaluatePopulation()
+
         self.maxGen = maxGen
         self.pCrossover = pCrossover
         self.pMutation = pMutation
-        print("Maximum number of generations:", self.maxGen)
-        print("Crossover rate:", self.pCrossover)
-        print("Mutation rate:", self.pMutation)
-        print("Generation: 0 ", end="")
-        
-        self.initializePopulation()
-        self.evaluatePopulation()
+        print("  Maximum number of generations:", self.maxGen)
+        print("  Crossover rate:", self.pCrossover)
+        print("  Mutation rate:", self.pMutation)
+        print("  Generation: %s " % self.generation, end="")
+
         while self.generation < self.maxGen and not self.isDone():
             self.oneGeneration()
             self.evaluatePopulation()
-            print("%d " % (self.generation), end="")
         if self.generation >= self.maxGen:
             print("Max generations reached")
         else:
@@ -199,7 +212,7 @@ class GeneticAlgorithm(object):
         """
         Plots a summary of the GA's progress over the generations.
         """
-        gens = range(self.generation+1)
+        gens = range(len(self.bestList))
         plt.plot(gens, self.bestList, label="Best")
         plt.plot(gens, self.avgList, label="Average")
         plt.legend()
@@ -208,6 +221,15 @@ class GeneticAlgorithm(object):
         if len(title) != 0:
             plt.title(title)
         plt.show()
+
+    def isDone(self):
+        """
+        If there is a stopping critera, it will be different for
+        each problem. As a default, we do not stop until max
+        epochs are reached.
+        """
+        # Override this if needed
+        return False
 
     def fitness(self, chromosome):
         """
@@ -218,13 +240,10 @@ class GeneticAlgorithm(object):
         """
         # Override this
         pass
-    
-    def isDone(self):
+
+    def make_random_chromosome(self):
         """
-        The stopping critera will change for each problem.  Therefore
-        it is not defined here.  To use this class to solve a
-        particular problem, inherit from this class and define this
-        method.
+        Function to generate a new random chromosome.
         """
         # Override this
         pass
