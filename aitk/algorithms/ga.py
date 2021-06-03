@@ -9,6 +9,7 @@
 # ****************************************************************
 
 import random
+import math
 from matplotlib import pyplot as plt
 
 class GeneticAlgorithm(object):
@@ -35,6 +36,8 @@ class GeneticAlgorithm(object):
         self.maxGen = None          # Maximum generation
         self.pCrossover = None      # Probability of crossover
         self.pMutation = None       # Probability of mutation (per bit)
+        self.pElite = None          # Percent elite
+        self.generation = 0         # Current generation of evolution
         print("Genetic algorithm")
         print("  Chromosome length:", self.length)
         print("  Population size:", self.popSize)
@@ -52,7 +55,6 @@ class GeneticAlgorithm(object):
         self.population = None      # Population is a list of chromosomes
         self.scores = None          # Fitnesses of all members of population
         self.totalFitness = None    # Total fitness in entire population
-        self.generation = 0         # Current generation of evolution
         self.bestList = []          # Best fitness per generation
         self.avgList = []           # Avg fitness per generation
         self.population = []
@@ -62,7 +64,10 @@ class GeneticAlgorithm(object):
                 chromosome.append(self.make_random_chromosome())
             self.population.append(chromosome)
 
-    def evaluatePopulation(self):
+    def reset(self):
+        self.generation = 0
+
+    def evaluatePopulation(self, **kwargs):
         """
         Computes the fitness of every chromosome in population.  Saves the
         fitness values to the list self.scores.  Checks whether the
@@ -77,19 +82,19 @@ class GeneticAlgorithm(object):
         """
         self.scores = []
         for chromosome in self.population:
-            self.scores.append(self.fitness(chromosome))
+            self.scores.append(self.fitness(chromosome, **kwargs))
         bestScore = max(self.scores)
         best = self.population[self.scores.index(bestScore)]
         if bestScore > self.bestEverScore:
             self.bestEver = best[:]
             self.bestEverScore = bestScore
-            self.report(best, bestScore)
+        self.report(best, bestScore)
         self.totalFitness = sum(self.scores)
         self.bestList.append(self.bestEverScore)
         self.avgList.append(sum(self.scores)/float(self.popSize))
 
     def report(self, best, score):
-        print("[Best %d] " % (score), end= "")
+        print("Generation %4d Best fitness %4.2f" % (self.generation, score))
 
     def selection(self):
         """
@@ -157,7 +162,15 @@ class GeneticAlgorithm(object):
         Returns: None
         Result: Replaces self.pop with a new population.
         """
+        # First, select the most elite to carry on unchanged:
+        elite_size = math.floor(self.pElite * len(self.population))
+        fittest = sorted(list(enumerate(self.scores)), key=lambda item: item[1],
+                         reverse=True)
         newPop = []
+        for i in range(elite_size):
+            index, score = fittest[i]
+            newPop.append(self.population[index])
+        # Next, fill up rest of population:
         while len(newPop) < self.popSize:
             parent1 = self.selection()
             parent2 = self.selection()
@@ -179,7 +192,8 @@ class GeneticAlgorithm(object):
         self.population = newPop
         self.generation += 1
 
-    def evolve(self, maxGen, pCrossover=0.7, pMutation=0.001):
+    def evolve(self, maxGen, pCrossover=0.7, pMutation=0.001,
+               pElite=0.0, **kwargs):
         """
         Run a series of generations until a maximum generation is
         reached or self.isDone() returns True.
@@ -187,21 +201,22 @@ class GeneticAlgorithm(object):
         Returns the best chromosome ever found over the course of
         the evolution, which is stored in self.bestEver.
         """
-        if self.maxGen is None:
-            self.initializePopulation()
-            self.evaluatePopulation()
-
         self.maxGen = maxGen
         self.pCrossover = pCrossover
         self.pMutation = pMutation
+        self.pElite = pElite
         print("  Maximum number of generations:", self.maxGen)
         print("  Crossover rate:", self.pCrossover)
         print("  Mutation rate:", self.pMutation)
-        print("  Generation: %s " % self.generation, end="")
+        print("  Elite percentage:", self.pElite)
+
+        if self.generation == 0:
+            self.initializePopulation()
+            self.evaluatePopulation(**kwargs)
 
         while self.generation < self.maxGen and not self.isDone():
             self.oneGeneration()
-            self.evaluatePopulation()
+            self.evaluatePopulation(**kwargs)
         if self.generation >= self.maxGen:
             print("Max generations reached")
         else:
@@ -231,7 +246,7 @@ class GeneticAlgorithm(object):
         # Override this if needed
         return False
 
-    def fitness(self, chromosome):
+    def fitness(self, chromosome, **kwargs):
         """
         The fitness function will change for each problem.  Therefore
         it is not defined here.  To use this class to solve a
