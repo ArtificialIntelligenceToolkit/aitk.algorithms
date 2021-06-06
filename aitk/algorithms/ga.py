@@ -59,9 +59,7 @@ class GeneticAlgorithm(object):
         self.avgList = []           # Avg fitness per generation
         self.population = []
         for i in range(self.popSize):
-            chromosome = []
-            for i in range(self.length):
-                chromosome.append(self.make_random_chromosome())
+            chromosome = self.make_random_chromosome()
             self.population.append(chromosome)
 
     def reset(self):
@@ -88,13 +86,14 @@ class GeneticAlgorithm(object):
         if bestScore > self.bestEverScore:
             self.bestEver = best[:]
             self.bestEverScore = bestScore
-        self.report(best, bestScore)
+        self.report()
         self.totalFitness = sum(self.scores)
         self.bestList.append(self.bestEverScore)
         self.avgList.append(sum(self.scores)/float(self.popSize))
 
-    def report(self, best, score):
-        print("Generation %4d Best fitness %4.2f" % (self.generation, score))
+    def report(self):
+        print("Generation %4d Best fitness %4.2f" % (self.generation,
+                                                     self.bestEverScore))
 
     def selection(self):
         """
@@ -146,10 +145,10 @@ class GeneticAlgorithm(object):
             if random.random() < self.pMutation:
                 if self.verbose:
                     print("Mutating at position", i)
-                c = self.make_random_chromosome()
-                while chromosome[i] == c:
-                    c = self.make_random_chromosome()
-                chromosome[i] = c
+                gene = self.make_random_gene()
+                while chromosome[i] == gene:
+                    gene = self.make_random_gene()
+                chromosome[i] = gene
 
     def oneGeneration(self):
         """
@@ -237,6 +236,12 @@ class GeneticAlgorithm(object):
             plt.title(title)
         plt.show()
 
+    def make_random_chromosome(self):
+        """
+        Function to generate a new random chromosome.
+        """
+        return [self.make_random_gene() for i in range(self.length)]
+
     def isDone(self):
         """
         If there is a stopping critera, it will be different for
@@ -256,9 +261,10 @@ class GeneticAlgorithm(object):
         # Override this
         pass
 
-    def make_random_chromosome(self):
+    def make_random_gene(self):
         """
-        Function to generate a new random chromosome.
+        Function to generate a new random gene.
         """
         # Override this
         pass
+
