@@ -145,9 +145,9 @@ class GeneticAlgorithm(object):
             if random.random() < self.pMutation:
                 if self.verbose:
                     print("Mutating at position", i)
-                gene = self.make_random_gene()
+                gene = self.mutate_gene(chromosome[i])
                 while chromosome[i] == gene:
-                    gene = self.make_random_gene()
+                    gene = self.mutate_gene(chromosome[i])
                 chromosome[i] = gene
 
     def oneGeneration(self):
@@ -162,7 +162,7 @@ class GeneticAlgorithm(object):
         Result: Replaces self.pop with a new population.
         """
         # First, select the most elite to carry on unchanged:
-        elite_size = math.floor(self.pElite * len(self.population))
+        elite_size = math.floor(self.pElite * self.popSize)
         fittest = sorted(list(enumerate(self.scores)), key=lambda item: item[1],
                          reverse=True)
         newPop = []
@@ -204,10 +204,13 @@ class GeneticAlgorithm(object):
         self.pCrossover = pCrossover
         self.pMutation = pMutation
         self.pElite = pElite
+
         print("  Maximum number of generations:", self.maxGen)
         print("  Crossover rate:", self.pCrossover)
         print("  Mutation rate:", self.pMutation)
         print("  Elite percentage:", self.pElite)
+        print("  Elite count:",
+              math.floor(self.pElite * self.popSize))
 
         if self.generation == 0:
             self.initializePopulation()
@@ -242,6 +245,13 @@ class GeneticAlgorithm(object):
         """
         return [self.make_random_gene() for i in range(self.length)]
 
+    def mutate_gene(self, gene):
+        """
+        Function to mutate gene.
+        """
+        # Override this if needed
+        return self.make_random_gene()
+
     def isDone(self):
         """
         If there is a stopping critera, it will be different for
@@ -267,4 +277,3 @@ class GeneticAlgorithm(object):
         """
         # Override this
         pass
-
