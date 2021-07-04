@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# **************************************************************
-# aitk.networks: Keras model wrapper with visualizations
+# ****************************************************************
+# aitk.algorithms: Algorithms for AI
 #
 # Copyright (c) 2021 AITK Developers
 #
-# https://github.com/ArtificialIntelligenceToolkit/aitk.networks
+# https://github.com/ArtificialIntelligenceToolkit/aitk.algorithms
 #
-# **************************************************************
+# ****************************************************************
 
-version_info = (0, 0, 5)
+version_info = (0, 0, 6)
 __version__ = ".".join(map(str, version_info))

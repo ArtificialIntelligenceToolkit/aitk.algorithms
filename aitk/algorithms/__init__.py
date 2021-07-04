@@ -9,3 +9,6 @@
 # ****************************************************************
 
 from ._version import __version__  # noqa: F401
+
+from .ga import GeneticAlgorithm
+from .novelty import NoveltySearch

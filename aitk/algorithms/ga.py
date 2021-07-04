@@ -10,7 +10,7 @@
 
 import random
 import math
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(object):
     """
@@ -26,7 +26,7 @@ class GeneticAlgorithm(object):
     probability mutations will occur.  A generation is complete once
     all of the original parents have been replaced by children.  This
     process continues until the maximum generation is reached or when
-    the isDone method returns True.
+    the is_done method returns True.
     """
 
     def __init__(self, length, popSize, verbose=False):
@@ -42,7 +42,7 @@ class GeneticAlgorithm(object):
         print("  Chromosome length:", self.length)
         print("  Population size:", self.popSize)
 
-    def initializePopulation(self):
+    def initialize_population(self):
         """
         Initialize each chromosome in the population with a random
         chromosome.
@@ -65,7 +65,7 @@ class GeneticAlgorithm(object):
     def reset(self):
         self.generation = 0
 
-    def evaluatePopulation(self, **kwargs):
+    def evaluate_population(self, **kwargs):
         """
         Computes the fitness of every chromosome in population.  Saves the
         fitness values to the list self.scores.  Checks whether the
@@ -150,7 +150,7 @@ class GeneticAlgorithm(object):
                     gene = self.mutate_gene(chromosome[i])
                 chromosome[i] = gene
 
-    def oneGeneration(self):
+    def one_generation(self):
         """
         Execute one generation of the evolution. Each generation,
         repeatedly select two parents, call crossover to generate
@@ -195,7 +195,7 @@ class GeneticAlgorithm(object):
                pElite=0.0, **kwargs):
         """
         Run a series of generations until a maximum generation is
-        reached or self.isDone() returns True.
+        reached or self.is_done() returns True.
 
         Returns the best chromosome ever found over the course of
         the evolution, which is stored in self.bestEver.
@@ -213,19 +213,19 @@ class GeneticAlgorithm(object):
               math.floor(self.pElite * self.popSize))
 
         if self.generation == 0:
-            self.initializePopulation()
-            self.evaluatePopulation(**kwargs)
+            self.initialize_population()
+            self.evaluate_population(**kwargs)
 
-        while self.generation < self.maxGen and not self.isDone():
-            self.oneGeneration()
-            self.evaluatePopulation(**kwargs)
+        while self.generation < self.maxGen and not self.is_done():
+            self.one_generation()
+            self.evaluate_population(**kwargs)
         if self.generation >= self.maxGen:
             print("Max generations reached")
         else:
             print("Solution found")
         return self.bestEver
 
-    def plotStats(self, title=""):
+    def plot_stats(self, title=""):
         """
         Plots a summary of the GA's progress over the generations.
         """
@@ -252,7 +252,7 @@ class GeneticAlgorithm(object):
         # Override this if needed
         return self.make_random_gene()
 
-    def isDone(self):
+    def is_done(self):
         """
         If there is a stopping critera, it will be different for
         each problem. As a default, we do not stop until max
