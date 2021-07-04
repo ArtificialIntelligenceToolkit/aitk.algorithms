@@ -33,10 +33,10 @@ class GeneticAlgorithm(object):
         self.verbose = verbose      # Set to True to see more info displayed
         self.length = length        # Length of the chromosome
         self.popSize = popSize      # Size of the population
-        self.maxGen = None          # Maximum generation
-        self.pCrossover = None      # Probability of crossover
-        self.pMutation = None       # Probability of mutation (per bit)
-        self.pElite = None          # Percent elite
+        self.generations = None     # Maximum generation
+        self.crossover_rate = None  # Probability of crossover
+        self.mutation_rate = None       # Probability of mutation (per bit)
+        self.elite_percent = None          # Percent elite
         self.generation = 0         # Current generation of evolution
         print("Genetic algorithm")
         print("  Chromosome length:", self.length)
@@ -114,14 +114,14 @@ class GeneticAlgorithm(object):
 
     def crossover(self, parent1, parent2):
         """
-        With probability self.pCrossover, recombine the genetic
+        With probability self.crossover_rate, recombine the genetic
         material of the given parents at a random location between
         1 and the length-1 of the chromosomes. If no crossover is
         performed, then return the original parents.
 
         Returns: Two children
         """
-        if random.random() < self.pCrossover:
+        if random.random() < self.crossover_rate:
             crossPoint = random.randrange(1, self.length)
             if self.verbose:
                 print("Crossing over at position", crossPoint)
@@ -135,14 +135,14 @@ class GeneticAlgorithm(object):
 
     def mutation(self, chromosome):
         """
-        With probability self.pMutation, mutate positions in the
+        With probability self.mutation_rate, mutate positions in the
         chromosome.
 
         Returns: None
         Result: Modifies the given chromosome
         """
         for i in range(self.length):
-            if random.random() < self.pMutation:
+            if random.random() < self.mutation_rate:
                 if self.verbose:
                     print("Mutating at position", i)
                 gene = self.mutate_gene(chromosome[i])
@@ -162,7 +162,7 @@ class GeneticAlgorithm(object):
         Result: Replaces self.pop with a new population.
         """
         # First, select the most elite to carry on unchanged:
-        elite_size = math.floor(self.pElite * self.popSize)
+        elite_size = math.floor(self.elite_percent * self.popSize)
         fittest = sorted(list(enumerate(self.scores)), key=lambda item: item[1],
                          reverse=True)
         newPop = []
@@ -191,8 +191,8 @@ class GeneticAlgorithm(object):
         self.population = newPop
         self.generation += 1
 
-    def evolve(self, maxGen, pCrossover=0.7, pMutation=0.001,
-               pElite=0.0, **kwargs):
+    def evolve(self, generations, crossover_rate=0.7, mutation_rate=0.001,
+               elite_percent=0.0, **kwargs):
         """
         Run a series of generations until a maximum generation is
         reached or self.is_done() returns True.
@@ -200,26 +200,26 @@ class GeneticAlgorithm(object):
         Returns the best chromosome ever found over the course of
         the evolution, which is stored in self.bestEver.
         """
-        self.maxGen = maxGen
-        self.pCrossover = pCrossover
-        self.pMutation = pMutation
-        self.pElite = pElite
+        self.generations = generations
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate
+        self.elite_percent = elite_percent
 
-        print("  Maximum number of generations:", self.maxGen)
-        print("  Crossover rate:", self.pCrossover)
-        print("  Mutation rate:", self.pMutation)
-        print("  Elite percentage:", self.pElite)
+        print("  Maximum number of generations:", self.generations)
+        print("  Crossover rate:", self.crossover_rate)
+        print("  Mutation rate:", self.mutation_rate)
+        print("  Elite percentage:", self.elite_percent)
         print("  Elite count:",
-              math.floor(self.pElite * self.popSize))
+              math.floor(self.elite_percent * self.popSize))
 
         if self.generation == 0:
             self.initialize_population()
             self.evaluate_population(**kwargs)
 
-        while self.generation < self.maxGen and not self.is_done():
+        while self.generation < self.generations and not self.is_done():
             self.one_generation()
             self.evaluate_population(**kwargs)
-        if self.generation >= self.maxGen:
+        if self.generation >= self.generations:
             print("Max generations reached")
         else:
             print("Solution found")
