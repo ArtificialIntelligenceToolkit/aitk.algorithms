@@ -73,8 +73,8 @@ class NoveltySearch():
         if len(self.archive) == 0:
             return 1.0
         d = self.k_nearest_distance(behavior)
-        avg = d/min(self.k, len(self.archive))
-        return avg/self.max_dist
+        avg = d / min(self.k, len(self.archive))
+        return avg / self.max_dist
 
     def check_archive(self, behavior, other_info=None):
         """
