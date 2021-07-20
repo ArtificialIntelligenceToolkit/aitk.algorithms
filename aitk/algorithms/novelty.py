@@ -102,18 +102,8 @@ class NoveltySearch():
         """
         assert len(self.growth) > 0, "archive must be non-empty to plot growth"
         plt.title("Archive Growth")
+        plt.xlabel("Time")
+        plt.ylabel("Size")
         plt.plot(self.growth)
         plt.show()
 
-    def plot_behaviors(self, max_x=1.0, max_y=1.0):
-        """
-        Plot behaviors.
-        """
-        assert len(self.archive)>0 and len(self.archive[0][0][0]) == 2, \
-               "archive must be non-emtpy and points must be 2d"
-        plt.axis([0, max_x, 0, max_y])
-        plt.title("Behaviors in Archive")
-        for b, s, o in self.archive:
-            x, y = zip(*b)
-            plt.plot(x, y)
-        plt.show()
