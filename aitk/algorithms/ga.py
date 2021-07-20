@@ -39,8 +39,8 @@ class GeneticAlgorithm(object):
         self.elite_percent = None          # Percent elite
         self.generation = 0         # Current generation of evolution
         print("Genetic algorithm")
-        print("  Chromosome length:", self.length)
-        print("  Population size:", self.popSize)
+        print(f"  Chromosome length: {self.length}")
+        print(f"  Population size: {self.popSize}")
 
     def initialize_population(self):
         """
@@ -92,8 +92,8 @@ class GeneticAlgorithm(object):
         self.avgList.append(sum(self.scores)/float(self.popSize))
 
     def report(self):
-        print("Generation %4d Best fitness %4.2f" % (self.generation,
-                                                     self.bestEverScore))
+        print(f"Generation {self.generation:4d} Best fitness {self.bestEverScore:4.2f}")
+                                                     
 
     def selection(self):
         """
@@ -124,7 +124,7 @@ class GeneticAlgorithm(object):
         if random.random() < self.crossover_rate:
             crossPoint = random.randrange(1, self.length)
             if self.verbose:
-                print("Crossing over at position", crossPoint)
+                print(f"Crossing over at position {crossPoint}")
             child1 = parent1[0:crossPoint] + parent2[crossPoint:]
             child2 = parent2[0:crossPoint] + parent1[crossPoint:]
             return child1, child2
@@ -144,7 +144,7 @@ class GeneticAlgorithm(object):
         for i in range(self.length):
             if random.random() < self.mutation_rate:
                 if self.verbose:
-                    print("Mutating at position", i)
+                    print(f"Mutating at position {i}")
                 gene = self.mutate_gene(chromosome[i])
                 while chromosome[i] == gene:
                     gene = self.mutate_gene(chromosome[i])
@@ -205,12 +205,11 @@ class GeneticAlgorithm(object):
         self.mutation_rate = mutation_rate
         self.elite_percent = elite_percent
 
-        print("  Maximum number of generations:", self.generations)
-        print("  Crossover rate:", self.crossover_rate)
-        print("  Mutation rate:", self.mutation_rate)
-        print("  Elite percentage:", self.elite_percent)
-        print("  Elite count:",
-              math.floor(self.elite_percent * self.popSize))
+        print(f"  Maximum number of generations: {self.generations}")
+        print(f"  Crossover rate: {self.crossover_rate}")
+        print(f"  Mutation rate: {self.mutation_rate}")
+        print(f"  Elite percentage {self.elite_percent}")
+        print(f"  Elite count: {math.floor(self.elite_percent * self.popSize)}")
 
         if self.generation == 0:
             self.initialize_population()
