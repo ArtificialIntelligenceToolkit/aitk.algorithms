@@ -10,7 +10,11 @@
 
 import random
 import math
+import io
+
 import matplotlib.pyplot as plt
+
+from aitk.utils import progress_bar
 
 class GeneticAlgorithm(object):
     """
@@ -30,14 +34,27 @@ class GeneticAlgorithm(object):
     """
 
     def __init__(self, length, popSize, verbose=False):
+        """
+        Create a GeneticAlgorithm instance.
+
+        Args:
+            length (int): length of chromosome
+            popSize (int): number of chromosomes in population
+            verbose (bool): optional, show details if True
+        """
         self.verbose = verbose      # Set to True to see more info displayed
+        self.progress_type = "notebook" # "notebook" or "tqdm"
         self.length = length        # Length of the chromosome
         self.popSize = popSize      # Size of the population
         self.generations = None     # Maximum generation
         self.crossover_rate = None  # Probability of crossover
-        self.mutation_rate = None       # Probability of mutation (per bit)
-        self.elite_percent = None          # Percent elite
+        self.mutation_rate = None   # Probability of mutation (per bit)
+        self.elite_percent = None   # Percent elite
         self.generation = 0         # Current generation of evolution
+        self._widget = None
+        self.title = "Genetic Algorithm Population Statistics"
+        self.bestList = []          # Best fitness per generation
+        self.avgList = []           # Avg fitness per generation
         print("Genetic algorithm")
         print(f"  Chromosome length: {self.length}")
         print(f"  Population size: {self.popSize}")
@@ -53,10 +70,10 @@ class GeneticAlgorithm(object):
         self.bestEver = None        # Best member ever in this evolution
         self.bestEverScore = 0      # Fitness of best member ever
         self.population = None      # Population is a list of chromosomes
-        self.scores = None          # Fitnesses of all members of population
         self.totalFitness = None    # Total fitness in entire population
-        self.bestList = []          # Best fitness per generation
-        self.avgList = []           # Avg fitness per generation
+        self.bestList.clear()          # Best fitness per generation
+        self.avgList.clear()           # Avg fitness per generation
+        self.scores = [0] * self.popSize  # Fitnesses of all members of population
         self.population = []
         for i in range(self.popSize):
             chromosome = self.make_random_chromosome()
@@ -78,22 +95,20 @@ class GeneticAlgorithm(object):
 
         Returns: None
         """
-        self.scores = []
-        for chromosome in self.population:
-            self.scores.append(self.fitness(chromosome, **kwargs))
+        for i, chromosome in enumerate(self.population):
+            self.scores[i] = self.fitness(chromosome, **kwargs)
         bestScore = max(self.scores)
         best = self.population[self.scores.index(bestScore)]
         if bestScore > self.bestEverScore:
             self.bestEver = best[:]
             self.bestEverScore = bestScore
-        self.report()
         self.totalFitness = sum(self.scores)
         self.bestList.append(self.bestEverScore)
         self.avgList.append(sum(self.scores)/float(self.popSize))
 
     def report(self):
         print(f"Generation {self.generation:4d} Best fitness {self.bestEverScore:4.2f}")
-                                                     
+
 
     def selection(self):
         """
@@ -204,39 +219,104 @@ class GeneticAlgorithm(object):
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
         self.elite_percent = elite_percent
+        elite_count = math.floor(self.elite_percent * self.popSize)
 
-        print(f"  Maximum number of generations: {self.generations}")
-        print(f"  Crossover rate: {self.crossover_rate}")
-        print(f"  Mutation rate: {self.mutation_rate}")
-        print(f"  Elite percentage {self.elite_percent}")
-        print(f"  Elite count: {math.floor(self.elite_percent * self.popSize)}")
+        print(f"Maximum number of generations: {self.generations}")
+        print(f"  Elite percentage {self.elite_percent} ({elite_count}/{self.popSize} chromosomes per generation)")
+        print(f"  Crossover rate: {self.crossover_rate} (~{int((self.popSize - elite_count) * self.crossover_rate)}/{self.popSize - elite_count} crossovers per generation)")
+        print(f"  Mutation rate: {self.mutation_rate} (~{int((self.popSize - elite_count) * self.length * self.mutation_rate * 2)}/{(self.popSize - elite_count) * self.length} genes per generation)")
 
         if self.generation == 0:
+            print("Evaluating initial population...")
             self.initialize_population()
             self.evaluate_population(**kwargs)
+            self.update()
+            print("Done!")
 
-        while self.generation < self.generations and not self.is_done():
-            self.one_generation()
-            self.evaluate_population(**kwargs)
+        progress = progress_bar(
+            range(self.generation, self.generations),
+            progress_type=self.progress_type,
+        )
+        for generation in progress:
+            progress.set_description("Best fitness %.2f" % self.bestEverScore)
+            progress.refresh() # to show immediately the update
+            try:
+                self.one_generation()
+                self.evaluate_population(**kwargs)
+            except KeyboardInterrupt:
+                break
+
+            self.update()
+            if self.is_done():
+                break
+
         if self.generation >= self.generations:
             print("Max generations reached")
-        else:
+        elif self.is_done():
             print("Solution found")
+        else:
+            print("Manually interrupted")
+            self.update()
+
         return self.bestEver
 
-    def plot_stats(self, title=""):
-        """
-        Plots a summary of the GA's progress over the generations.
-        """
+    def make_plot(self):
         gens = range(len(self.bestList))
         plt.plot(gens, self.bestList, label="Best")
         plt.plot(gens, self.avgList, label="Average")
         plt.legend()
         plt.xlabel("Generations")
         plt.ylabel("Fitness")
-        if len(title) != 0:
+        if self.title:
             plt.title(title)
+
+    def plot_stats(self, title=None):
+        """
+        Plots a summary of the GA's progress over the generations.
+        """
+        if title:
+            self.title = title
+
+        self.make_plot()
         plt.show()
+
+    def get_svg(self):
+        self.make_plot()
+        bytes = io.BytesIO()
+        plt.savefig(bytes, format="svg")
+        plt.close()
+        img_bytes = bytes.getvalue()
+        return img_bytes.decode()
+
+    def get_widget(self):
+        from ipywidgets import HTML
+
+        if self._widget is None:
+            svg = self.get_svg()
+            self._widget = HTML(svg)
+
+        return self._widget
+
+    def watch(self, title=None):
+        from IPython.display import display
+
+        # Watched items get a border
+        # Need width and height; we get it out of svg:
+        #header = svg.split("\n")[0]
+        #width = int(re.match('.*width="(\d*)px"', header).groups()[0])
+        #height = int(re.match('.*height="(\d*)px"', header).groups()[0])
+        #div = """<div style="outline: 5px solid #1976D2FF; width: %spx; height: %spx;">%s</div>""" % (width, height, svg)
+        #self._widget.value = div
+
+        if title:
+            self.title = title
+
+        display(self.get_widget())
+
+    def update(self):
+        if self._widget is not None:
+            svg = self.get_svg()
+            self._widget.value = svg
 
     def make_random_chromosome(self):
         """
