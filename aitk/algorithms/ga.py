@@ -268,7 +268,7 @@ class GeneticAlgorithm(object):
         plt.xlabel("Generations")
         plt.ylabel("Fitness")
         if self.title:
-            plt.title(title)
+            plt.title(self.title)
 
     def plot_stats(self, title=None):
         """
