@@ -96,7 +96,7 @@ class GeneticAlgorithm(object):
         Returns: None
         """
         for i, chromosome in enumerate(self.population):
-            self.scores[i] = self.fitness(chromosome, **kwargs)
+            self.scores[i] = self.fitness(chromosome, index=i, **kwargs)
         bestScore = max(self.scores)
         best = self.population[self.scores.index(bestScore)]
         if bestScore > self.bestEverScore:
@@ -108,7 +108,6 @@ class GeneticAlgorithm(object):
 
     def report(self):
         print(f"Generation {self.generation:4d} Best fitness {self.bestEverScore:4.2f}")
-
 
     def selection(self):
         """
@@ -249,6 +248,7 @@ class GeneticAlgorithm(object):
             self.update()
             if self.is_done():
                 break
+            self.report()
 
         if self.generation >= self.generations:
             print("Max generations reached")
